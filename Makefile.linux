@@ -1,0 +1,51 @@
+# ZOYI ZT703S PC GUI - Linux build against the distribution's Qt 6.
+#
+#   Debian/Ubuntu: apt install qt6-base-dev libqt6serialport6-dev
+#   make -f Makefile.linux
+#
+# The serial port is /dev/ttyACM0 or similar: your user needs to be in the
+# dialout (or uucp) group to open it.
+
+PKGS     := Qt6Widgets Qt6SerialPort
+MOC      ?= $(shell pkg-config --variable=libexecdir Qt6Core)/moc
+
+BUILD    ?= build/linux
+TARGET   := $(BUILD)/zt703s
+
+CXX      ?= g++
+CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra -fPIC -DQT_NO_DEBUG \
+            $(shell pkg-config --cflags $(PKGS)) -I.
+LIBS     := $(shell pkg-config --libs $(PKGS))
+
+SRCS := main.cpp $(wildcard core/*.cpp) $(wildcard ui/*.cpp)
+OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(SRCS))
+
+MOC_HEADERS := core/scpiclient.h core/framepump.h ui/mainwindow.h ui/waveview.h \
+               ui/overview.h ui/controldock.h ui/measbar.h ui/dmmpanel.h ui/genpanel.h
+MOC_OBJS    := $(patsubst %.h,$(BUILD)/moc_%.o,$(MOC_HEADERS))
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS) $(MOC_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) -o $@ $(OBJS) $(MOC_OBJS) $(LIBS)
+
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/moc_%.cpp: %.h
+	@mkdir -p $(dir $@)
+	$(MOC) -I. $< -o $@
+
+$(BUILD)/moc_%.o: $(BUILD)/moc_%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+clean:
+	rm -rf $(BUILD)
+
+.SECONDARY:
+-include $(OBJS:.o=.d) $(MOC_OBJS:.o=.d)
+
+.PHONY: all clean

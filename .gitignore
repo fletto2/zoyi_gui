@@ -1,0 +1,8 @@
+build/
+*.o
+*.d
+moc_*.cpp
+zt703s
+zt703s.exe
+*.log
+.DS_Store

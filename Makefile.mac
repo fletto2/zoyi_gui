@@ -1,0 +1,89 @@
+# ZOYI ZT-703S PC GUI - macOS build, plain make + clang++ against Homebrew Qt 6.
+#
+#   brew install qt
+#   make -f Makefile.mac            build the binary
+#   make -f Makefile.mac app        build ZT703S.app (macdeployqt bundles Qt)
+#   make -f Makefile.mac zip        ZT703S.zip, ready to hand out
+#
+# BUILD defaults to a folder under ~/Library/Caches. Override with BUILD=<dir>.
+#
+# Qt comes in as frameworks from Homebrew (dynamic). The app is ad hoc signed.
+# Another Mac shows a Gatekeeper warning for it: right-click, Open, once.
+# A Developer ID signature plus notarization needs a paid Apple account.
+
+QT_PREFIX := $(shell brew --prefix qt)
+QT_BASE   := $(shell brew --prefix qtbase)
+QT_FW     := $(QT_PREFIX)/lib
+MOC       := $(QT_BASE)/share/qt/libexec/moc
+MACDEPLOY := $(QT_PREFIX)/bin/macdeployqt
+
+BUILD  ?= $(HOME)/Library/Caches/zt703s-build
+TARGET := $(BUILD)/zt703s
+APP    := $(BUILD)/ZT703S.app
+
+# Qt headers come through the frameworks. The C++ headers come from the SDK, not
+# the Command Line Tools folder, which can hold a stale copy.
+# The sources include <QWidget>, not <QtWidgets/QWidget>, so each framework's
+# Headers folder goes on the include path. -isystem keeps warnings out of Qt.
+QT_INCS   := $(foreach m,QtCore QtGui QtWidgets QtSerialPort,-isystem $(QT_FW)/$(m).framework/Headers)
+SDK       := $(shell xcrun --show-sdk-path)
+CXX       := clang++
+CXXFLAGS  := -std=c++17 -O2 -g -Wall -Wextra -mmacosx-version-min=12.0 \
+             -nostdinc++ -isystem $(SDK)/usr/include/c++/v1 \
+             -DQT_NO_DEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB \
+             -DQT_SERIALPORT_LIB \
+             -F$(QT_FW) $(QT_INCS) -I.
+LDFLAGS   := -mmacosx-version-min=12.0 -F$(QT_FW) \
+             -framework QtWidgets -framework QtGui -framework QtCore \
+             -framework QtSerialPort \
+             -Wl,-rpath,$(QT_FW)
+
+SRCS := main.cpp $(wildcard core/*.cpp) $(wildcard ui/*.cpp)
+OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(SRCS))
+
+MOC_HEADERS := core/scpiclient.h core/framepump.h ui/mainwindow.h ui/waveview.h \
+               ui/overview.h ui/controldock.h ui/measbar.h ui/dmmpanel.h ui/genpanel.h
+MOC_OBJS    := $(patsubst %.h,$(BUILD)/moc_%.o,$(MOC_HEADERS))
+
+vpath %.h core ui .
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS) $(MOC_OBJS)
+	@mkdir -p $(dir $@)
+	$(CXX) -o $@ $(OBJS) $(MOC_OBJS) $(LDFLAGS)
+
+$(BUILD)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/moc_%.cpp: %.h
+	@mkdir -p $(dir $@)
+	$(MOC) -F$(QT_FW) $(subst -isystem,-I,$(QT_INCS)) -I. $< -o $@
+
+$(BUILD)/moc_%.o: $(BUILD)/moc_%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+# ZT703S.app: Contents/MacOS/zt703s + Info.plist, then macdeployqt copies the
+# Qt frameworks and the cocoa platform plugin in and fixes the load paths.
+app: $(TARGET) Info.plist.in
+	rm -rf $(APP)
+	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
+	cp $(TARGET) $(APP)/Contents/MacOS/zt703s
+	cp Info.plist.in $(APP)/Contents/Info.plist
+	$(MACDEPLOY) $(APP)
+	codesign --force --deep --sign - $(APP)
+
+zip: app
+	cd $(BUILD) && rm -f ZT703S.zip && ditto -c -k --keepParent --norsrc ZT703S.app ZT703S.zip
+	@echo $(BUILD)/ZT703S.zip
+
+clean:
+	rm -rf $(BUILD)
+
+.SECONDARY:
+# Moc objects get a .d too: see the note in Makefile.
+-include $(OBJS:.o=.d) $(MOC_OBJS:.o=.d)
+
+.PHONY: all app zip clean

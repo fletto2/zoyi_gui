@@ -1,0 +1,83 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-qt6-static
+            mingw-w64-ucrt-x86_64-freetype
+            mingw-w64-ucrt-x86_64-harfbuzz
+            mingw-w64-ucrt-x86_64-graphite2
+            mingw-w64-ucrt-x86_64-libpng
+            mingw-w64-ucrt-x86_64-brotli
+            mingw-w64-ucrt-x86_64-bzip2
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-pcre2
+            mingw-w64-ucrt-x86_64-libb2
+            mingw-w64-ucrt-x86_64-openssl
+            zip
+      - name: Build
+        run: make -j4 BUILD=build/win
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/win/zt703s.exe README.md LICENSE dist/
+          cd dist && zip ../zt703s-windows.zip zt703s.exe README.md LICENSE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zt703s-windows
+          path: zt703s-windows.zip
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: zt703s-windows.zip
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        run: brew install qt
+      - name: Build
+        run: make -j4 -f Makefile.mac zip BUILD="$PWD/build/mac"
+      - name: Package
+        run: cp build/mac/ZT703S.zip zt703s-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zt703s-macos
+          path: zt703s-macos.zip
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: zt703s-macos.zip
+
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        run: sudo apt-get update && sudo apt-get install -y qt6-base-dev qt6-base-dev-tools libqt6serialport6-dev
+      - name: Build
+        run: make -j4 -f Makefile.linux
