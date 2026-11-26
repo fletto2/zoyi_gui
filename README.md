@@ -53,9 +53,10 @@ Ready-made builds for Windows and macOS are on the
 
 - **Windows:** unzip and run `zoyi_gui.exe`. It is a single static executable,
   nothing to install.
-- **macOS:** unzip and move `ZoyiGUI.app` to Applications. The app is not
-  signed with a paid Apple developer ID, so the first time you have to
-  right-click it, choose Open, and confirm.
+- **macOS:** for Apple Silicon Macs (M1 and later) on a recent macOS. Unzip and
+  move `ZoyiGUI.app` to Applications. The app is not signed with a paid Apple
+  developer ID, so the first time you have to right-click it, choose Open, and
+  confirm. On an Intel Mac, build it from source (see below).
 
 ## Using it
 
