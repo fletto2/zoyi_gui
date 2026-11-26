@@ -1,21 +1,31 @@
-# ZOYI ZT703S/ZT706S PC GUI - macOS build, plain make + clang++ against Homebrew Qt 6.
+# ZOYI ZT703S/ZT706S PC GUI - macOS build, plain make + clang++ against Qt 6.
 #
-#   brew install qt
+#   brew install qt                 (or an official Qt install: QT_DIR=<Qt>/6.x/macos)
 #   make -f Makefile.mac            build the binary
 #   make -f Makefile.mac app        build ZoyiGUI.app (macdeployqt bundles Qt)
 #   make -f Makefile.mac zip        ZoyiGUI.zip, ready to hand out
 #
 # BUILD defaults to a folder under ~/Library/Caches. Override with BUILD=<dir>.
 #
-# Qt comes in as frameworks from Homebrew (dynamic). The app is ad hoc signed.
+# Qt comes in as frameworks (dynamic). Homebrew's are built for the macOS they
+# were bottled on, which then is the app's minimum too; the official Qt
+# packages (QT_DIR) run on older systems, so releases are built with those.
+# The app is ad hoc signed.
 # Another Mac shows a Gatekeeper warning for it: right-click, Open, once.
 # A Developer ID signature plus notarization needs a paid Apple account.
 
+QT_DIR    ?=
+ifeq ($(QT_DIR),)
 QT_PREFIX := $(shell brew --prefix qt)
 QT_BASE   := $(shell brew --prefix qtbase)
 QT_FW     := $(QT_PREFIX)/lib
 MOC       := $(QT_BASE)/share/qt/libexec/moc
 MACDEPLOY := $(QT_PREFIX)/bin/macdeployqt
+else
+QT_FW     := $(QT_DIR)/lib
+MOC       := $(QT_DIR)/libexec/moc
+MACDEPLOY := $(QT_DIR)/bin/macdeployqt
+endif
 
 BUILD  ?= $(HOME)/Library/Caches/zoyi_gui-build
 TARGET := $(BUILD)/zoyi_gui
@@ -27,9 +37,10 @@ APP    := $(BUILD)/ZoyiGUI.app
 # Headers folder goes on the include path. -isystem keeps warnings out of Qt.
 QT_INCS   := $(foreach m,QtCore QtGui QtWidgets QtSerialPort,-isystem $(QT_FW)/$(m).framework/Headers)
 SDK       := $(shell xcrun --show-sdk-path)
-# The oldest macOS the bundled Qt runs on (its LC_BUILD_VERSION minos), so the
-# app states it instead of failing to load on an older system.
-MACOS_MIN := $(or $(shell otool -l $(QT_FW)/QtCore.framework/QtCore | awk '/minos/ {print $$2; exit}'),14.0)
+# The oldest macOS every bundled Qt framework runs on (the highest of their
+# LC_BUILD_VERSION minos), so the app states it instead of failing to load.
+QT_MODS   := QtCore QtGui QtWidgets QtSerialPort
+MACOS_MIN := $(or $(shell for f in $(QT_MODS); do otool -l $(QT_FW)/$$f.framework/$$f | awk '/minos/ {print $$2; exit}'; done | sort -t. -k1,1n -k2,2n | tail -1),12.0)
 CXX       := clang++
 CXXFLAGS  := -std=c++17 -O2 -g -Wall -Wextra -mmacosx-version-min=$(MACOS_MIN) \
              -nostdinc++ -isystem $(SDK)/usr/include/c++/v1 \

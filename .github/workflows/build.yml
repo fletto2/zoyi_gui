@@ -58,10 +58,24 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt
-        run: brew install qt
+      # Official Qt, not Homebrew: Homebrew's frameworks need the macOS they
+      # were built on (26 at the time), the official ones run on macOS 12+.
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          host: mac
+          target: desktop
+          arch: clang_64
+          modules: qtserialport
+          cache: true
       - name: Build
-        run: make -j4 -f Makefile.mac zip BUILD="$PWD/build/mac"
+        run: make -j4 -f Makefile.mac zip BUILD="$PWD/build/mac" QT_DIR="$QT_ROOT_DIR"
+      - name: Check the minimum macOS
+        run: |
+          plutil -extract LSMinimumSystemVersion raw build/mac/ZoyiGUI.app/Contents/Info.plist
+          for f in build/mac/ZoyiGUI.app/Contents/MacOS/zoyi_gui build/mac/ZoyiGUI.app/Contents/Frameworks/*.framework/Versions/A/Qt*; do
+            echo "$f: $(otool -l "$f" | awk '/minos/ {print $2; exit}')"
+          done
       - name: Package
         run: cp build/mac/ZoyiGUI.zip zoyi_gui-macos.zip
       - uses: actions/upload-artifact@v4
