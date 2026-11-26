@@ -2048,6 +2048,14 @@ void FramePump::alignTrigger()
     const float L = float(t.level);
     double best = 1e9, cross = 0.0;
     int bestI = -1;
+    // Sinc only where the view draws it (not a PEAK envelope). The curve can
+    // ring across the level more than once between two samples: scan the pair
+    // in sub-steps and refine the crossing nearest t = 0.
+    const bool onCurve = m_alignSinc && !cf.isPeak();
+    const auto starting = [&](double u) {
+        const double y = lanczosCurve(cf.v, u);
+        return t.rising ? y <= L : y >= L;
+    };
     for (int i = base - 2; i <= base + 2; ++i) {
         if (i < 0 || i + 1 >= n)
             continue;
@@ -2055,25 +2063,28 @@ void FramePump::alignTrigger()
         const bool hit = t.rising ? (a < L && b >= L) : (a > L && b <= L);
         if (!hit || a == b)
             continue;
-        const double at = double(i) + double(L - a) / double(b - a);
+        double at = double(i) + double(L - a) / double(b - a);
+        if (onCurve) {
+            constexpr int kScan = 8;
+            double found = 1e9;
+            for (int k = 0; k < kScan; ++k) {
+                double lo = i + double(k) / kScan, hi = i + double(k + 1) / kScan;
+                if (!starting(lo) || starting(hi))
+                    continue;
+                for (int step = 0; step < 17; ++step) {
+                    const double mid = 0.5 * (lo + hi);
+                    (starting(mid) ? lo : hi) = mid;
+                }
+                const double c = 0.5 * (lo + hi);
+                if (std::abs(c - i0) < std::abs(found - i0))
+                    found = c;
+            }
+            if (found < 1e8)
+                at = found;
+        }
         if (std::abs(at - i0) < std::abs(best - i0)) {
             best = at;
             bestI = i;
-        }
-    }
-    if (bestI >= 0 && m_alignSinc) {
-        // Bisection between the two samples: the curve passes through both.
-        const auto starting = [&](double u) {
-            const double y = lanczosCurve(cf.v, u);
-            return t.rising ? y <= L : y >= L;
-        };
-        double lo = bestI, hi = bestI + 1;
-        if (starting(lo) && !starting(hi)) {
-            for (int step = 0; step < 20; ++step) {
-                const double mid = 0.5 * (lo + hi);
-                (starting(mid) ? lo : hi) = mid;
-            }
-            best = 0.5 * (lo + hi);
         }
     }
     if (bestI >= 0)
