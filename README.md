@@ -7,6 +7,8 @@ on your computer, plus panels for the multimeter and the signal generator.
 
 It runs on Windows, macOS and Linux.
 
+![The app on a MacBook Air next to a ZT703S and a ZT706S](docs/screenshot.jpg)
+
 ## What it does
 
 - Live waveforms from both channels, drawn with sin(x)/x interpolation or as
