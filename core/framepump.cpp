@@ -21,9 +21,9 @@ FramePump::FramePump(QObject *parent)
     , m_idlePoll(this)
     , m_ovPos(this)
 {
-    // Bench override of the rate cap: ZT703S_MIN_CYCLE_MS=0 runs uncapped.
+    // Bench override of the rate cap: ZOYI_GUI_MIN_CYCLE_MS=0 runs uncapped.
     bool capOk = false;
-    const int cap = qEnvironmentVariableIntValue("ZT703S_MIN_CYCLE_MS", &capOk);
+    const int cap = qEnvironmentVariableIntValue("ZOYI_GUI_MIN_CYCLE_MS", &capOk);
     if (capOk && cap >= 0)
         m_minCycleMs = cap;
     // These only set a flag; frameDone() does the work between cycles,

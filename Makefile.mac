@@ -1,9 +1,9 @@
-# ZOYI ZT-703S PC GUI - macOS build, plain make + clang++ against Homebrew Qt 6.
+# ZOYI ZT703S/ZT706S PC GUI - macOS build, plain make + clang++ against Homebrew Qt 6.
 #
 #   brew install qt
 #   make -f Makefile.mac            build the binary
-#   make -f Makefile.mac app        build ZT703S.app (macdeployqt bundles Qt)
-#   make -f Makefile.mac zip        ZT703S.zip, ready to hand out
+#   make -f Makefile.mac app        build ZoyiGUI.app (macdeployqt bundles Qt)
+#   make -f Makefile.mac zip        ZoyiGUI.zip, ready to hand out
 #
 # BUILD defaults to a folder under ~/Library/Caches. Override with BUILD=<dir>.
 #
@@ -17,9 +17,9 @@ QT_FW     := $(QT_PREFIX)/lib
 MOC       := $(QT_BASE)/share/qt/libexec/moc
 MACDEPLOY := $(QT_PREFIX)/bin/macdeployqt
 
-BUILD  ?= $(HOME)/Library/Caches/zt703s-build
-TARGET := $(BUILD)/zt703s
-APP    := $(BUILD)/ZT703S.app
+BUILD  ?= $(HOME)/Library/Caches/zoyi_gui-build
+TARGET := $(BUILD)/zoyi_gui
+APP    := $(BUILD)/ZoyiGUI.app
 
 # Qt headers come through the frameworks. The C++ headers come from the SDK, not
 # the Command Line Tools folder, which can hold a stale copy.
@@ -65,19 +65,19 @@ $(BUILD)/moc_%.o: $(BUILD)/moc_%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-# ZT703S.app: Contents/MacOS/zt703s + Info.plist, then macdeployqt copies the
+# ZoyiGUI.app: Contents/MacOS/zoyi_gui + Info.plist, then macdeployqt copies the
 # Qt frameworks and the cocoa platform plugin in and fixes the load paths.
 app: $(TARGET) Info.plist.in
 	rm -rf $(APP)
 	mkdir -p $(APP)/Contents/MacOS $(APP)/Contents/Resources
-	cp $(TARGET) $(APP)/Contents/MacOS/zt703s
+	cp $(TARGET) $(APP)/Contents/MacOS/zoyi_gui
 	cp Info.plist.in $(APP)/Contents/Info.plist
 	$(MACDEPLOY) $(APP)
 	codesign --force --deep --sign - $(APP)
 
 zip: app
-	cd $(BUILD) && rm -f ZT703S.zip && ditto -c -k --keepParent --norsrc ZT703S.app ZT703S.zip
-	@echo $(BUILD)/ZT703S.zip
+	cd $(BUILD) && rm -f ZoyiGUI.zip && ditto -c -k --keepParent --norsrc ZoyiGUI.app ZoyiGUI.zip
+	@echo $(BUILD)/ZoyiGUI.zip
 
 clean:
 	rm -rf $(BUILD)

@@ -67,7 +67,7 @@ MainWindow::MainWindow(const QString &autoPort, bool verbose, QWidget *parent)
     : QMainWindow(parent)
     , m_verbose(verbose)
 {
-    setWindowTitle(tr("ZOYI ZT-703S"));
+    setWindowTitle(tr("ZOYI ZT703S / ZT706S"));
     resize(1440, 900);
 
     // --- Toolbar --------------------------------------
@@ -771,7 +771,7 @@ void MainWindow::saveCsv(bool whole)
     }
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     const QString def = QDir(dir).filePath(
-        QStringLiteral("zt703s_%1_%2.csv")
+        QStringLiteral("zoyi_%1_%2.csv")
             .arg(whole ? QStringLiteral("record") : QStringLiteral("frame"),
                  QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"))));
     const QString path = QFileDialog::getSaveFileName(
@@ -792,7 +792,7 @@ void MainWindow::saveCsv(bool whole)
             || std::abs(b.xorig - a.xorig) > 1e-12)
             shared = false;
     }
-    out << "# ZT703S " << (whole ? "whole record" : "shown frame") << ", "
+    out << "# ZOYI " << (whole ? "whole record" : "shown frame") << ", "
         << QDateTime::currentDateTime().toString(Qt::ISODate) << ", timebase "
         << QString::number(f.scal, 'g', 6) << " s/div, seq " << f.seq << '\n';
     QStringList head;
@@ -886,7 +886,7 @@ void MainWindow::saveScreenshot(const QByteArray &bmp)
     QGuiApplication::clipboard()->setImage(img);
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     const QString def = QDir(dir).filePath(
-        QStringLiteral("zt703s_%1.png")
+        QStringLiteral("zoyi_%1.png")
             .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"))));
     const QString path = QFileDialog::getSaveFileName(this, tr("Save meter screenshot"), def,
                                                       tr("PNG image (*.png)"));

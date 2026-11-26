@@ -6,7 +6,7 @@
 #include <QTimer>
 #include <deque>
 
-// UI-free SCPI-over-CDC-serial client for the ZT-703S.
+// UI-free SCPI-over-CDC-serial client for the ZT703S/ZT706S.
 //
 // Lives in a worker thread (moveToThread): slots run there, signals are
 // queued to listeners. Serial framing: 115200 8N1, DTR asserted, LF line endings, input flushed

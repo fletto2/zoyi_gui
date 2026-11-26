@@ -497,7 +497,7 @@ void DmmPanel::toggleLog(bool on)
     }
     const QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     const QString def = QDir(dir).filePath(
-        QStringLiteral("zt703s_dmm_%1.csv")
+        QStringLiteral("zoyi_dmm_%1.csv")
             .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"))));
     const QString path =
         QFileDialog::getSaveFileName(this, tr("Log DMM readings"), def, tr("CSV (*.csv)"));

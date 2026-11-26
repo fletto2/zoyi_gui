@@ -1,8 +1,8 @@
-# ZOYI ZT703S PC GUI - Windows build: static Qt 6, plain make + g++.
+# ZOYI ZT703S/ZT706S PC GUI - Windows build: static Qt 6, plain make + g++.
 #
 # Needs MSYS2 with the UCRT64 packages listed in setup_msys2.sh. From a
 # UCRT64 shell:
-#     make                 builds build/win/zt703s.exe
+#     make                 builds build/win/zoyi_gui.exe
 #     make BUILD=<dir>     puts objects and the exe somewhere else
 # qmake is not used: the static kit's qmake6 -query reports wrong paths,
 # so the real ones are set below.
@@ -22,7 +22,7 @@ INCS      := $(QT_INCS) -I.
 CXX_INCS  := $(patsubst -I%,-isystem %,$(QT_INCS)) -I.
 
 BUILD  ?= build/win
-TARGET := $(BUILD)/zt703s.exe
+TARGET := $(BUILD)/zoyi_gui.exe
 
 CXX      := g++
 # -g and no -s strip: Windows crash offsets can then be symbolized with addr2line.

@@ -51,9 +51,9 @@ trigger point.
 Ready-made builds for Windows and macOS are on the
 [Releases](../../releases) page.
 
-- **Windows:** unzip and run `zt703s.exe`. It is a single static executable,
+- **Windows:** unzip and run `zoyi_gui.exe`. It is a single static executable,
   nothing to install.
-- **macOS:** unzip and move `ZT703S.app` to Applications. The app is not
+- **macOS:** unzip and move `ZoyiGUI.app` to Applications. The app is not
   signed with a paid Apple developer ID, so the first time you have to
   right-click it, choose Open, and confirm.
 
@@ -66,8 +66,8 @@ the meter again after a mode change or an unplug.
 
 You can also pass the port on the command line to connect straight away:
 
-    zt703s COM5
-    zt703s -v /dev/ttyACM0      (-v also prints the SCPI traffic)
+    zoyi_gui COM5
+    zoyi_gui -v /dev/ttyACM0      (-v also prints the SCPI traffic)
 
 ## Building
 
@@ -75,7 +75,7 @@ The app is plain C++17 and Qt 6 (Widgets and SerialPort), built with make.
 
 **Windows** (MSYS2, static build): install [MSYS2](https://www.msys2.org/),
 run `setup_msys2.sh` once from a UCRT64 shell, then `make`. The result is
-`build/win/zt703s.exe`. `build.sh` does the same when called from PowerShell.
+`build/win/zoyi_gui.exe`. `build.sh` does the same when called from PowerShell.
 
 **macOS** (Homebrew):
 

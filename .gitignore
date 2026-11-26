@@ -2,7 +2,7 @@ build/
 *.o
 *.d
 moc_*.cpp
-zt703s
-zt703s.exe
+zoyi_gui
+zoyi_gui.exe
 *.log
 .DS_Store

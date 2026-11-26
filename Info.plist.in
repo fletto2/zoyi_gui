@@ -2,10 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>ZT703S</string>
-  <key>CFBundleDisplayName</key><string>ZOYI ZT-703S</string>
-  <key>CFBundleIdentifier</key><string>org.openosc.zt703s-gui</string>
-  <key>CFBundleExecutable</key><string>zt703s</string>
+  <key>CFBundleName</key><string>ZoyiGUI</string>
+  <key>CFBundleDisplayName</key><string>ZOYI GUI</string>
+  <key>CFBundleIdentifier</key><string>io.github.fletto2.zoyi-gui</string>
+  <key>CFBundleExecutable</key><string>zoyi_gui</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>CFBundleShortVersionString</key><string>0.1</string>

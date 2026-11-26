@@ -1,4 +1,4 @@
-# ZOYI ZT703S PC GUI - Linux build against the distribution's Qt 6.
+# ZOYI ZT703S/ZT706S PC GUI - Linux build against the distribution's Qt 6.
 #
 #   Debian/Ubuntu: apt install qt6-base-dev libqt6serialport6-dev
 #   make -f Makefile.linux
@@ -10,7 +10,7 @@ PKGS     := Qt6Widgets Qt6SerialPort
 MOC      ?= $(shell pkg-config --variable=libexecdir Qt6Core)/moc
 
 BUILD    ?= build/linux
-TARGET   := $(BUILD)/zt703s
+TARGET   := $(BUILD)/zoyi_gui
 
 CXX      ?= g++
 CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra -fPIC -DQT_NO_DEBUG \
