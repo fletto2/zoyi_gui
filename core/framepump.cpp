@@ -1,8 +1,10 @@
 #include "framepump.h"
 
+#include "lanczos.h"
 #include "scpiclient.h"
 
 #include <QDateTime>
+#include <QSettings>
 #include <cmath>
 #include <qmath.h>
 
@@ -21,6 +23,8 @@ FramePump::FramePump(QObject *parent)
     , m_idlePoll(this)
     , m_ovPos(this)
 {
+    // The view's saved render mode (WaveView reads the same key); renderSincChanged after.
+    m_alignSinc = QSettings().value(QStringLiteral("trace/sinc"), true).toBool();
     // Bench override of the rate cap: ZOYI_GUI_MIN_CYCLE_MS=0 runs uncapped.
     bool capOk = false;
     const int cap = qEnvironmentVariableIntValue("ZOYI_GUI_MIN_CYCLE_MS", &capOk);
@@ -2013,12 +2017,20 @@ void FramePump::setTrigAlign(bool on)
     emit info(QStringLiteral(". trigger alignment %1").arg(on ? "on" : "off"));
 }
 
+void FramePump::setTrigAlignSinc(bool on)
+{
+    m_alignSinc = on;
+}
+
 void FramePump::alignTrigger()
 {
     // Sub-sample trigger alignment: the meter puts the trigger
     // on a whole sample, so a frame lands up to one sample left or right of
     // the last one. Find the level crossing with the trigger slope next to
     // t = 0, interpolate it, and shift both channels so it sits at t = 0.
+    // In sinc mode the crossing is taken on the drawn curve, as the meter's
+    // own screen does: a straight-line crossing differs from it by up to a
+    // third of a sample on fast edges, and that moved the trace every frame.
     // Raw samples only (stride 1): a decimated window has no single sample
     // at the trigger. Shifts over 1.5 samples are left alone (no crossing
     // there, so the trigger came from somewhere else, such as Auto).
@@ -2035,6 +2047,7 @@ void FramePump::alignTrigger()
     const int base = int(std::floor(i0));
     const float L = float(t.level);
     double best = 1e9, cross = 0.0;
+    int bestI = -1;
     for (int i = base - 2; i <= base + 2; ++i) {
         if (i < 0 || i + 1 >= n)
             continue;
@@ -2045,9 +2058,26 @@ void FramePump::alignTrigger()
         const double at = double(i) + double(L - a) / double(b - a);
         if (std::abs(at - i0) < std::abs(best - i0)) {
             best = at;
-            cross = cf.xorig + at * cf.xinc;
+            bestI = i;
         }
     }
+    if (bestI >= 0 && m_alignSinc) {
+        // Bisection between the two samples: the curve passes through both.
+        const auto starting = [&](double u) {
+            const double y = lanczosCurve(cf.v, u);
+            return t.rising ? y <= L : y >= L;
+        };
+        double lo = bestI, hi = bestI + 1;
+        if (starting(lo) && !starting(hi)) {
+            for (int step = 0; step < 20; ++step) {
+                const double mid = 0.5 * (lo + hi);
+                (starting(mid) ? lo : hi) = mid;
+            }
+            best = 0.5 * (lo + hi);
+        }
+    }
+    if (bestI >= 0)
+        cross = cf.xorig + best * cf.xinc;
     if (best > 1e8 || std::abs(cross) > 1.5 * cf.xinc) {
         ++m_alignMiss;
         return;

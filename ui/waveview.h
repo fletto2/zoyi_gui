@@ -105,6 +105,7 @@ signals:
     void channelOffsetRequested(int ch, double volts);  // ground tag drag: CHAN:OFFS
     void triggerLevelRequested(double volts);           // T tag drag: TRIG:EDGE:LEV
     void renderStats(double fps, qreal lastPaintMs, qreal lastDrawMs); // 2 s, debug
+    void renderSincChanged(bool on);      // Sinc vs Line: the pump aligns on that curve
 
 protected:
     void paintEvent(QPaintEvent *event) override;

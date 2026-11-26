@@ -407,6 +407,7 @@ MainWindow::MainWindow(const QString &autoPort, bool verbose, QWidget *parent)
     // Trigger: dock + level tag drag -> pump; model -> view + status bar.
     connect(m_controls, &ControlDock::triggerValue, m_pump, &FramePump::setTriggerValue);
     connect(m_controls, &ControlDock::trigAlignChanged, m_pump, &FramePump::setTrigAlign);
+    connect(m_view, &WaveView::renderSincChanged, m_pump, &FramePump::setTrigAlignSinc);
     connect(m_controls, &ControlDock::cursorModeChanged, m_view, &WaveView::setCursorMode);
     connect(m_controls, &ControlDock::cursorChannelChanged, m_view, &WaveView::setCursorChannel);
     connect(m_view, &WaveView::cursorsChanged, m_controls, &ControlDock::setCursorReadout);

@@ -2,6 +2,7 @@
 
 #include "controldock.h" // fmt::seconds / fmt::volts
 #include "theme.h"
+#include "core/lanczos.h"
 
 #include <QFontMetrics>
 #include <QAction>
@@ -55,40 +56,11 @@ QString fmtAxisTime(double t, double div)
 
 const QColor kChColor[2] = {QColor(0xfa, 0xcc, 0x15), QColor(0x38, 0xbd, 0xf8)};
 
-constexpr double kPi = 3.14159265358979323846;
-
 // Phosphor time constant: the layer retains this fraction per 16.67 ms of
 // WALL time (a 60 f/s CRT), independent of the frame rate the scope
 // delivers.
 constexpr double kRetainPerTick = 0.40;
 constexpr double kTickMs = 1000.0 / 60.0;
-
-// Lanczos-windowed sinc kernel from a precomputed table: one linear
-// interpolation per (pixel, sample) term instead of two trig calls.
-// a = 10 lobes; beyond that the window is exactly zero.
-struct LanczosKernel {
-    static constexpr int kLobes = 10;
-    static constexpr int kRes = 512; // table steps per unit distance
-
-    QVector<double> tab;
-    LanczosKernel() : tab(kLobes * kRes + 2, 0.0)
-    {
-        tab[0] = 1.0;
-        for (int i = 1; i < tab.size(); ++i) {
-            const double x = double(i) / kRes;
-            const double px = kPi * x;
-            tab[i] = (std::sin(px) / px) * (std::sin(px / kLobes) / (px / kLobes));
-        }
-    }
-    double at(double d) const
-    {
-        if (d >= kLobes)
-            return 0.0;
-        const double u = d * kRes;
-        const int i = int(u);
-        return tab[i] + (tab[i + 1] - tab[i]) * (u - i);
-    }
-};
 
 // A thick line as one filled outline, for an antialiased fillPath. Wide AA
 // pens on a 1000+ point polyline cost about 210 ms per frame on the Mac:
@@ -250,6 +222,7 @@ WaveView::WaveView(QWidget *parent)
             m_renderSinc = picked == sinc;
             QSettings s2;
             s2.setValue(QStringLiteral("trace/sinc"), m_renderSinc);
+            emit renderSincChanged(m_renderSinc);
         }
         m_liveDirty = true;
         update();
@@ -758,7 +731,6 @@ void WaveView::drawTraces(QPainter &p, const Grid &g)
 {
     if (g.w <= 0 || g.h <= 0 || m_span <= 0.0)
         return;
-    static const LanczosKernel kernel;
     const int cy = g.y + g.h / 2;
     const double t0 = m_center - m_span / 2.0, t1 = m_center + m_span / 2.0;
 
@@ -880,21 +852,8 @@ void WaveView::drawTraces(QPainter &p, const Grid &g)
                     continue; // before the first sample
                 if (u > n - 1)
                     break;   // past the last sample: no extrapolation
-                int k0 = qMax(0, int(std::floor(u)) - LanczosKernel::kLobes);
-                int k1 = qMin(n - 1, int(std::ceil(u)) + LanczosKernel::kLobes);
-                // Normalized by the weight sum: near the ends of the fetched
-                // data the kernel is cut short, and the raw sum then rings
-                // and droops (the edge wiggle). The
-                // pump also fetches margin beyond the screen, so the visible
-                // edges sit inside the data.
-                double y = 0.0, wsum = 0.0;
-                for (int k = k0; k <= k1; ++k) {
-                    const double w = kernel.at(std::abs(u - k));
-                    y += double(cf.v[k]) * w;
-                    wsum += w;
-                }
-                if (wsum > 1e-6)
-                    y /= wsum;
+                // Same curve the pump aligns the trigger crossing on.
+                const double y = lanczosCurve(cf.v, u);
                 poly.append(QPointF(g.x + px, cy - ((y + off) / vdiv) * (g.h / 8.0)));
             }
         } else if (pxPerSample < 0.8) {

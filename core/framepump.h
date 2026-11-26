@@ -139,6 +139,8 @@ public slots:
     void setTriggerValue(int field, double value);
     // PC-side sub-sample trigger alignment, default on.
     void setTrigAlign(bool on);
+    // The view draws sin(x)/x: find the crossing on that curve, not the straight line.
+    void setTrigAlignSinc(bool on);
     // ACQ:ROLL: the meter rolls at >= 200 ms/div in Auto only
     // while this is on. Same set + quiet read-back barrier.
     void setRoll(bool on);
@@ -301,5 +303,6 @@ private:
     bool m_perfWarned = false; // core clock warning logged once per connect
     // Trigger alignment.
     bool m_align = true;
+    bool m_alignSinc = true;
     int m_alignHit = 0, m_alignMiss = 0; // per 2 s, logged with the rate line
 };
