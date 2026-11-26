@@ -2,20 +2,35 @@
 #
 #   Debian/Ubuntu: apt install qt6-base-dev libqt6serialport6-dev
 #   make -f Makefile.linux
+#   make -f Makefile.linux appimage LINUXDEPLOY=<linuxdeploy-x86_64.AppImage>
+#                                   (needs linuxdeploy-plugin-qt next to it or on PATH)
+#
+# QT_DIR=<Qt>/6.x/gcc_64 builds against an official Qt install instead of the
+# distribution's; releases use that, built on an older Ubuntu so the AppImage
+# runs on older distributions too.
 #
 # The serial port is /dev/ttyACM0 or similar: your user needs to be in the
 # dialout (or uucp) group to open it.
 
+QT_DIR   ?=
+ifeq ($(QT_DIR),)
 PKGS     := Qt6Widgets Qt6SerialPort
 MOC      ?= $(shell pkg-config --variable=libexecdir Qt6Core)/moc
+QT_CFLAGS := $(shell pkg-config --cflags $(PKGS))
+QT_LIBS  := $(shell pkg-config --libs $(PKGS))
+else
+MOC      ?= $(QT_DIR)/libexec/moc
+QT_CFLAGS := -isystem $(QT_DIR)/include $(foreach m,QtCore QtGui QtWidgets QtSerialPort,-isystem $(QT_DIR)/include/$(m))
+QT_LIBS  := -L$(QT_DIR)/lib -Wl,-rpath,$(QT_DIR)/lib -lQt6SerialPort -lQt6Widgets -lQt6Gui -lQt6Core
+endif
 
 BUILD    ?= build/linux
 TARGET   := $(BUILD)/zoyi_gui
 
 CXX      ?= g++
 CXXFLAGS := -std=c++17 -O2 -g -Wall -Wextra -fPIC -DQT_NO_DEBUG \
-            $(shell pkg-config --cflags $(PKGS)) -I.
-LIBS     := $(shell pkg-config --libs $(PKGS))
+            $(QT_CFLAGS) -I.
+LIBS     := $(QT_LIBS)
 
 SRCS := main.cpp $(wildcard core/*.cpp) $(wildcard ui/*.cpp)
 OBJS := $(patsubst %.cpp,$(BUILD)/%.o,$(SRCS))
@@ -42,10 +57,23 @@ $(BUILD)/moc_%.o: $(BUILD)/moc_%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
+# AppImage: linuxdeploy copies the binary, Qt's libraries and plugins (QMAKE
+# tells its Qt plugin which Qt) and the icon into an AppDir and packs it.
+APPDIR      := $(BUILD)/AppDir
+APPIMAGE    := $(BUILD)/zoyi_gui-x86_64.AppImage
+LINUXDEPLOY ?= linuxdeploy-x86_64.AppImage # An absolute path, or one on PATH.
+
+appimage: $(TARGET)
+	rm -rf $(APPDIR) $(APPIMAGE)
+	cd $(BUILD) && QMAKE=$(if $(QT_DIR),$(QT_DIR)/bin/qmake,qmake6) OUTPUT=zoyi_gui-x86_64.AppImage \
+	  $(LINUXDEPLOY) --appdir AppDir -e zoyi_gui \
+	  -d $(CURDIR)/packaging/zoyi_gui.desktop -i $(CURDIR)/packaging/zoyi_gui.png \
+	  --plugin qt --output appimage
+
 clean:
 	rm -rf $(BUILD)
 
 .SECONDARY:
 -include $(OBJS:.o=.d) $(MOC_OBJS:.o=.d)
 
-.PHONY: all clean
+.PHONY: all appimage clean

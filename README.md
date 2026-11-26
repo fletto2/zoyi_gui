@@ -48,7 +48,7 @@ trigger point.
 
 ## Download
 
-Ready-made builds for Windows and macOS are on the
+Ready-made builds for Windows, macOS and Linux are on the
 [Releases](../../releases) page.
 
 - **Windows:** unzip and run `zoyi_gui.exe`. It is a single static executable,
@@ -57,6 +57,13 @@ Ready-made builds for Windows and macOS are on the
   move `ZoyiGUI.app` to Applications. The app is not signed with a paid Apple
   developer ID, so the first time you have to right-click it, choose Open, and
   confirm. On an Intel Mac, build it from source (see below).
+- **Linux:** an AppImage for x86-64 distributions from about 2022 on (Ubuntu
+  22.04, Debian 12, Fedora 36 or newer). Make it executable
+  (`chmod +x zoyi_gui-linux-x86_64.AppImage`) and run it. To open the meter's
+  port your user needs to be in the `dialout` group (`uucp` on Arch):
+  `sudo usermod -aG dialout $USER`, then log in again. If it says FUSE is
+  missing, install `libfuse2` (`libfuse2t64` on Ubuntu 24.04), or run it with
+  `--appimage-extract-and-run`.
 
 ## Using it
 

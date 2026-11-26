@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ZOYI GUI
+Comment=PC front end for the ZOYI ZT703S/ZT706S running OpenOSC
+Exec=zoyi_gui
+Icon=zoyi_gui
+Categories=Development;Electronics;
+Terminal=false
