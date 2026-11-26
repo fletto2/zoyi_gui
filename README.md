@@ -1,11 +1,20 @@
-# ZOYI ZT703S desktop app
+# ZOYI ZT703S / ZT706S desktop app
 
-A desktop front end for the ZOYI ZT703S scopemeter running
+A desktop front end for the ZOYI ZT703S and ZT706S scopemeters running
 [OpenOSC](https://github.com/bve/OpenOSC) firmware. It talks to the meter over
 USB using OpenOSC's SCPI commands and gives you a big, live oscilloscope view
 on your computer, plus panels for the multimeter and the signal generator.
 
 It runs on Windows, macOS and Linux.
+
+The speed comes from the firmware: OpenOSC adds SCPI extensions made for a
+desktop app. One `WAV:FRAM?` query returns both channels of the same
+acquisition, each with its scaling, in a single binary block, `WAV:ENV?` sends a
+min/max envelope of the full record for the overview strip, `WAV:MEAS?` has
+the meter compute the measurements itself, and peak decimation
+(`WAV:POIN:MODE PEAK`) keeps short glitches visible in a zoomed-out view. With
+plain per-setting queries and raw sample dumps the same view would take many
+round trips per frame.
 
 ![The app on a MacBook Air next to a ZT703S and a ZT706S](docs/screenshot.jpg)
 
@@ -32,12 +41,10 @@ trigger point.
 
 ## Requirements
 
-- A ZOYI ZT703S with OpenOSC firmware. The fast transfer commands it uses
-  (`WAV:FRAM?`, `WAV:ENV?`, `WAV:MEAS?`) are in OpenOSC 0.21.9 and later.
+- A ZOYI ZT703S or ZT706S with OpenOSC firmware, version 0.21.9 or later
+  (the first release with the desktop SCPI extensions above).
 - USB data needs the meter's high-speed clock profile. If the app connects but
   sees no data, check the clock setting on the meter.
-- The ZT706S runs the same firmware and may work as well, but only the
-  ZT703S has been tested.
 
 ## Download
 
