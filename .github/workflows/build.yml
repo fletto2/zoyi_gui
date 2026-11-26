@@ -116,11 +116,12 @@ jobs:
       - name: Package
         run: cp build/linux/zoyi_gui-x86_64.AppImage zoyi_gui-linux-x86_64.AppImage
       - name: Check that it starts
-        # Still running after 5 s under a virtual X server: timeout's 124.
+        # Still running after 5 s under a virtual X server (timeout gives 124), with only the bundled Qt.
         run: |
           sudo apt-get install -y xvfb
           set +e
-          xvfb-run -a timeout 5 ./zoyi_gui-linux-x86_64.AppImage --appimage-extract-and-run
+          env -u LD_LIBRARY_PATH -u QT_PLUGIN_PATH -u QT_ROOT_DIR -u QML2_IMPORT_PATH QT_DEBUG_PLUGINS=0 \
+            xvfb-run -a timeout 5 ./zoyi_gui-linux-x86_64.AppImage --appimage-extract-and-run
           test $? = 124
       - uses: actions/upload-artifact@v4
         with:
