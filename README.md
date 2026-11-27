@@ -67,6 +67,9 @@ Ready-made builds for Windows, macOS and Linux are on the
 
 ## Using it
 
+On the meter, turn on **Settings → Files & USB → USB Remote** first (hold MENU
+to leave it later); the app talks to the meter through it.
+
 Plug the meter in over USB, start the app and pick the meter's serial port
 from the toolbar (it shows up as a COM port on Windows, `/dev/cu.usbmodem...`
 on macOS and `/dev/ttyACM...` on Linux). With Auto-reconnect on, the app finds
